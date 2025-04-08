@@ -25,6 +25,7 @@ class Owner(Base):
     """
     __tablename__ = 'owners'
     owner_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    sitter_id = Column(ForeignKey('sitters.sitter_id'), nullable=False)
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     phone_number = Column(Integer, nullable=False)
@@ -44,9 +45,8 @@ class Dog(Base):
     dog_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     chip_id = Column(Integer, nullable=False, unique=True)
     owner_id = Column(ForeignKey('owners.owner_id'), nullable=False)
-    sitter_id = Column(ForeignKey('sitters.sitter_id'), nullable=False)
     name = Column(String(255), nullable=False)
-    birth_date = Column(Date, nullable=False)
+    birth_date = Column(String(255), nullable=False)
     breed = Column(String(255), nullable=False)
     height = Column(Integer, nullable=False)
     weight = Column(Integer, nullable=False)
@@ -63,7 +63,6 @@ class Dog(Base):
         dog_id = {self.dog_id},
         chip_id = {self.chip_id},
         owner_id = {self.owner_id},
-        sitter_id = {self.sitter_id},
         name = {self.name},
         birth_date = {self.birth_date},
         breed = {self.breed},
