@@ -13,6 +13,7 @@ class Sitter(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
 
+
     def __repr__(self):
         return f'''Sitter(
         sitter_id = {self.sitter_id},
@@ -29,6 +30,7 @@ class Owner(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     phone_number = Column(Integer, nullable=False)
+
 
     def __repr__(self):
         return f'''Owner(
@@ -58,6 +60,7 @@ class Dog(Base):
     training = Column(Boolean, nullable=False)
     img_url = Column(String)
 
+
     def __repr__(self):
         return f'''Dog(
         dog_id = {self.dog_id},
@@ -84,6 +87,7 @@ class Trick(Base):
     trick_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     call = Column(String(255), nullable=False)
 
+
     def __repr__(self):
         return f'''Trick(
         trick_id = {self.trick_id},
@@ -98,6 +102,7 @@ class Knowledge(Base):
     dog_id = Column(ForeignKey('dogs.dog_id'), nullable=False)
     trick_id = Column(ForeignKey('tricks.trick_id'), nullable=False)
     knowledge = Column(Integer, nullable=False)
+    
 
     def __repr__(self):
         return f'''Knowledge(
@@ -116,6 +121,7 @@ class Stay(Base):
     sitter_id = Column(ForeignKey('sitters.sitter_id'), nullable=False)
     checkin = Column(Date, nullable=False)
     checkout = Column(Date, nullable=False)
+
 
     def __repr__(self):
         return f'''Stay(

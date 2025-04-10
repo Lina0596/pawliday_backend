@@ -2,7 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from abstract_handler import AbstractDataHandler
 from models import Base, Sitter, Owner, Dog, Stay, Trick, Knowledge
+from sqlalchemy.inspection import inspect
 import json
+
+
+def to_dict(obj):
+    return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
 
 
 class SQLiteHandler(AbstractDataHandler):
@@ -16,7 +21,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         """
         with self.Session() as session:
-            owners = session.query(Owner).all()
+            owners_obj = session.query(Owner).all()
+            owners = [to_dict(owner) for owner in owners_obj]
             return owners
 
     
@@ -50,7 +56,10 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             owner_to_delete = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+            dogs_to_delete = session.query(Dog).filter(Dog.owner_id == owner_id).all()
             session.delete(owner_to_delete)
+            for dog in dogs_to_delete:
+                session.delete(dog)
             session.commit()
 
 
@@ -127,7 +136,6 @@ class SQLiteHandler(AbstractDataHandler):
 
 data_manager = SQLiteHandler('pawliday.db')
 
-
 # create sitter
 # data_manager.add_sitter(name="Lina Dahlhaus", email="lina.dahlhaus@icloud.com")
 
@@ -136,6 +144,9 @@ data_manager = SQLiteHandler('pawliday.db')
 # data_manager.add_owner(name="Finn Wilder", email="finn.wilder@example.com", phone_number="+49 171 33445566")
 # data_manager.add_owner(name="Zara Nightshade", email="zara.nightshade@example.com", phone_number="+49 170 55667788")
 # data_manager.add_owner(name="Ivy Blackthorn", email="maya.blackthorn@example.com", phone_number="+49 176 99887766")
+# data_manager.add_owner(name="Kai Ironhart", email="kai.ironhart@example.com", phone_number="+49 157 44556677")
+# data_manager.add_owner(name="Nova Winters", email="nova.winters@example.com", phone_number="+49 152 77889911")
+# data_manager.add_owner(name="Selene Shadowbrook", email="selene.shadowbrook@example.com", phone_number="+49 170 33442211")
 
 # create dogs
 # data_manager.add_dog(chip_id=123456789012345, owner_id=1, name="Luna", birth_date="2017-03-15", breed="Mixed breed", height=55, weight=25, food_per_day=500, gender="female", castrated=True, character="sensible", sociable=True, training=True, img_url="https://cdn.pixabay.com/photo/2019/04/05/13/56/shepherd-mongrel-4105106_1280.jpg")
@@ -143,3 +154,7 @@ data_manager = SQLiteHandler('pawliday.db')
 # data_manager.add_dog(chip_id=112233445566778, owner_id=2, name="Bella", birth_date="2020-01-03", breed="Chihuahua", height=25, weight=3, food_per_day=100, gender="female", castrated=False, character="stubborn", sociable=False, training=False, img_url="https://cdn.pixabay.com/photo/2019/01/28/19/18/chihuahua-3961096_1280.jpg")
 # data_manager.add_dog(chip_id=223344556677889, owner_id=3, name="Rocky", birth_date="2016-11-09", breed="Border Collie", height=53, weight=20, food_per_day=400, gender="male", castrated=True, character="impulsive", sociable=True, training=True, img_url="https://cdn.pixabay.com/photo/2017/03/29/10/17/border-collie-2184706_1280.jpg")
 # data_manager.add_dog(chip_id=556677889900112, owner_id=4, name="Momo", birth_date="2021-10-12", breed="Pomeranian", height=24, weight=3, food_per_day=90, gender="male", castrated=False, character="stubborn", sociable=False, training=True, img_url="https://cdn.pixabay.com/photo/2023/01/19/13/05/pointed-7729054_1280.jpg")
+# data_manager.add_dog(chip_id=445566778899001, owner_id=5, name="Bruno", birth_date="2018-02-17", breed="Bernese Mountain Dog", height=65, weight=38, food_per_day=750, gender="male", castrated=False, character="lazy", sociable=True, training=False, img_url="https://cdn.pixabay.com/photo/2020/11/21/08/34/bernese-mountain-dog-5763415_1280.jpg")
+# data_manager.add_dog(chip_id=667788990011223, owner_id=5, name="Heidi", birth_date="2019-04-04", breed="Bernese Mountain Dog", height=63, weight=36, food_per_day=700, gender="female", castrated=True, character="sensible", sociable=True, training=False, img_url="https://cdn.pixabay.com/photo/2016/02/01/12/25/dog-1173509_1280.jpg")
+# data_manager.add_dog(chip_id=778899001122334, owner_id=6, name="Koda", birth_date="2020-12-08", breed="Siberian Husky", height=59, weight=23, food_per_day=600, gender="male", castrated=True, character="impulsive", sociable=False, training=True, img_url="https://cdn.pixabay.com/photo/2020/03/11/13/45/snow-4922199_1280.jpg")
+# data_manager.add_dog(chip_id=889900112233445, owner_id=7, name="Coco", birth_date="2021-06-21", breed="Royal Poodle", height=45, weight=18, food_per_day=350, gender="female", castrated=False, character="sensible", sociable=True, training=False, img_url="https://cdn.pixabay.com/photo/2016/08/01/15/58/poodle-1561405_1280.jpg")
