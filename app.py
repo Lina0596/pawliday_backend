@@ -13,7 +13,17 @@ data_manager = SQLiteHandler('pawliday.db')
 @app.route('/api/owners', methods=['GET'])
 def get_all_owners():
     owners = data_manager.get_all_owners()
-    return jsonify(owners)
+    return jsonify(owners), 200
+
+
+@app.route('/api/owners', methods=['GET', 'POST'])
+def add_owner():
+    if request.method == 'POST':
+        new_owner = request.get_json()
+        data_manager.add_owner(new_owner=new_owner)
+        return jsonify({"message": f"Owner successfully added."}), 201
+    owners = data_manager.get_all_owners()
+    return jsonify(owners), 200
 
 
 @app.route('/api/owners/<int:owner_id>', methods=['DELETE'])
@@ -25,13 +35,23 @@ def delete_owner(owner_id):
 @app.route('/api/owner_dogs/<int:owner_id>', methods=['GET'])
 def get_owner_dogs(owner_id):
     owner_dogs = data_manager.get_owner_dogs(owner_id)
-    return jsonify(owner_dogs)
+    return jsonify(owner_dogs), 200
+
+
+@app.route('/api/owner_dogs/<int:owner_id>', methods=['GET', 'POST'])
+def add_dog(owner_id):
+    if request.method == 'POST':
+        new_dog = request.get_json()
+        data_manager.add_dog(owner_id=owner_id, new_dog=new_dog)
+        return jsonify({"message": f"Dog successfully added."}), 201
+    owner_dogs = data_manager.get_owner_dogs(owner_id)
+    return jsonify(owner_dogs), 200
 
 
 @app.route('/api/dog/<int:dog_id>', methods=['GET'])
 def get_dog(dog_id):
     dog = data_manager.get_dog(dog_id)
-    return jsonify(dog)
+    return jsonify(dog), 200
 
 
 @app.route('/api/dog/<int:dog_id>', methods=['DELETE'])

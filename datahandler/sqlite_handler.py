@@ -26,15 +26,15 @@ class SQLiteHandler(AbstractDataHandler):
             return owners
 
     
-    def add_owner(self, name, email, phone_number):
+    def add_owner(self, new_owner):
         """
         """
         with self.Session() as session:
             new_owner = Owner(
                 sitter_id=1,
-                name=name,
-                email=email,
-                phone_number=phone_number
+                name=new_owner.get('name'),
+                email=new_owner.get('email'),
+                phone_number=new_owner.get('phone_number')
             )
             session.add(new_owner)
             session.commit()
@@ -63,25 +63,25 @@ class SQLiteHandler(AbstractDataHandler):
             session.commit()
 
 
-    def add_dog(self, chip_id, owner_id, name, birth_date, breed, height, weight, food_per_day, gender, castrated, character, sociable, training, img_url):
+    def add_dog(self, owner_id, new_dog):
         """
         """
         with self.Session() as session:
             new_dog = Dog(
-                chip_id=chip_id,
+                chip_id=new_dog.get('chip_id'),
                 owner_id=owner_id,
-                name=name,
-                birth_date=birth_date,
-                breed=breed,
-                height=height,
-                weight=weight,
-                food_per_day=food_per_day,
-                gender=gender,
-                castrated=castrated,
-                character=character,
-                sociable=sociable,
-                training=training,
-                img_url=img_url
+                name=new_dog.get('name'),
+                birth_date=new_dog.get('birth_date'),
+                breed=new_dog.get('breed'),
+                height=new_dog.get('height'),
+                weight=new_dog.get('weight'),
+                food_per_day=new_dog.get('food_per_day'),
+                gender=new_dog.get('gender'),
+                castrated=new_dog.get('castrated'),
+                character=new_dog.get('character'),
+                sociable=new_dog.get('sociable'),
+                training=new_dog.get('training'),
+                img_url=new_dog.get('img_url')
             )
             session.add(new_dog)
             session.commit()
