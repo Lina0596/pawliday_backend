@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from abstract_handler import AbstractDataHandler
-from models import Base, Sitter, Owner, Dog, Stay, Trick, Knowledge
+from datahandler.abstract_handler import AbstractDataHandler
+from datahandler.models import Base, Sitter, Owner, Dog, Stay, Trick, Knowledge
 from sqlalchemy.inspection import inspect
 import json
 
@@ -22,7 +22,7 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             owners_obj = session.query(Owner).all()
-            owners = [to_dict(owner) for owner in owners_obj]
+            owners = [to_dict(obj) for obj in owners_obj]
             return owners
 
     
@@ -91,7 +91,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         """
         with self.Session() as session:
-            owner_dogs = session.query(Dog).filter(Dog.owner_id == owner_id).all()
+            owner_dogs_obj = session.query(Dog).filter(Dog.owner_id == owner_id).all()
+            owner_dogs = [to_dict(obj) for obj in owner_dogs_obj]
             return owner_dogs
         
 
@@ -99,7 +100,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         """
         with self.Session() as session:
-            dog = session.query(Dog).filter(Dog.dog_id == dog_id).first()
+            dog_obj = session.query(Dog).filter(Dog.dog_id == dog_id).first()
+            dog = to_dict(dog_obj)
             return dog
     
 
@@ -134,7 +136,7 @@ class SQLiteHandler(AbstractDataHandler):
             session.commit()
 
 
-data_manager = SQLiteHandler('pawliday.db')
+# data_manager = SQLiteHandler('pawliday.db')
 
 # create sitter
 # data_manager.add_sitter(name="Lina Dahlhaus", email="lina.dahlhaus@icloud.com")
