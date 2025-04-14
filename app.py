@@ -10,6 +10,22 @@ CORS(app)
 data_manager = SQLiteHandler('pawliday.db')
 
 
+@app.route('/api/sitters', methods=['GET'])
+def get_all_sitters():
+    sitters = data_manager.get_all_sitters()
+    return jsonify(sitters), 200
+
+
+@app.route('/api/sitters', methods=['GET', 'POST'])
+def add_sitter():
+    if request.method == 'POST':
+        new_sitter = request.get_json()
+        data_manager.add_sitter(new_sitter=new_sitter)
+        return jsonify({"message": f"Sitter successfully added."}), 201
+    sitters = data_manager.get_all_sitters()
+    return jsonify(sitters), 200
+
+
 @app.route('/api/owners', methods=['GET'])
 def get_all_owners():
     owners = data_manager.get_all_owners()

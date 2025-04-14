@@ -17,6 +17,15 @@ class SQLiteHandler(AbstractDataHandler):
         Base.metadata.create_all(self.engine)
 
 
+    def get_all_sitters(self):
+        """
+        """
+        with self.Session() as session:
+            sitters_obj = session.query(Sitter).all()
+            sitters = [to_dict(obj) for obj in sitters_obj]
+            return sitters
+
+
     def add_sitter(self, new_sitter):
         """
         """
