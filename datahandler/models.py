@@ -10,14 +10,16 @@ class Sitter(Base):
     """
     __tablename__ = 'sitters'
     sitter_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    name = Column(String(255), nullable=False)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
 
 
     def __repr__(self):
         return f'''Sitter(
         sitter_id = {self.sitter_id},
-        name = {self.name},
+        first_name = {self.first_name},
+        last_name = {self.last_name},
         email = {self.email})'''
 
 
@@ -27,15 +29,17 @@ class Owner(Base):
     __tablename__ = 'owners'
     owner_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     sitter_id = Column(ForeignKey('sitters.sitter_id'), nullable=False)
-    name = Column(String(255), nullable=False)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
-    phone_number = Column(Integer, nullable=False)
+    phone_number = Column(String(20), nullable=False, unique=True)
 
 
     def __repr__(self):
         return f'''Owner(
         owner_id = {self.owner_id},
-        name = {self.name},
+        first_name = {self.first_name},
+        last_name = {self.last_name},
         email = {self.email},
         phone_number = {self.phone_number})'''
 
