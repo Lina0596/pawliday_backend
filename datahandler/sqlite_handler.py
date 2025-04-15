@@ -39,6 +39,16 @@ class SQLiteHandler(AbstractDataHandler):
             session.commit()
 
 
+    def update_sitter(self, sitter_id, updated_data):
+        """
+        """
+        with self.Session() as session:
+            sitter_to_update = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+            for key in updated_data:
+                setattr(sitter_to_update, key, updated_data.get(key))
+            session.commit()
+
+
     def get_all_owners(self):
         """
         """
@@ -46,6 +56,15 @@ class SQLiteHandler(AbstractDataHandler):
             owners_obj = session.query(Owner).all()
             owners = [to_dict(obj) for obj in owners_obj]
             return owners
+        
+    
+    def get_owner(self, owner_id):
+        """
+        """
+        with self.Session() as session:
+            owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+            owner = to_dict(owner_obj)
+            return owner
         
     
     def add_owner(self, new_owner):
@@ -63,14 +82,13 @@ class SQLiteHandler(AbstractDataHandler):
             session.commit()
 
 
-    def update_owner(self, owner_id, name, email, phone_number):
+    def update_owner(self, owner_id, updated_data):
         """
         """
         with self.Session() as session:
             owner_to_update = session.query(Owner).filter(Owner.owner_id == owner_id).first()
-            owner_to_update.name = name
-            owner_to_update.email = email
-            owner_to_update.phone_number = phone_number
+            for key in updated_data:
+                setattr(owner_to_update, key, updated_data.get(key))
             session.commit()
 
 
@@ -119,6 +137,15 @@ class SQLiteHandler(AbstractDataHandler):
             return owner_dogs
         
 
+    def get_all_dogs(self):
+        """
+        """
+        with self.Session() as session:
+            dogs_obj = session.query(Dog).all()
+            dogs = [to_dict(obj) for obj in dogs_obj]
+            return dogs
+        
+
     def get_dog(self, dog_id):
         """
         """
@@ -128,25 +155,13 @@ class SQLiteHandler(AbstractDataHandler):
             return dog
     
 
-    def update_dog(self, dog_id, chip_id, owner_id, name, birth_date, breed, height, weight, food_per_day, gender, castrated, character, sociable, training, img_url):
+    def update_dog(self, dog_id, updated_data):
         """
         """
         with self.Session() as session:
-            dog_to_update = session.query(Dog).filter(Dog.dog_id == dog_id).first()
-            dog_to_update.chip_id = chip_id
-            dog_to_update.owner_id = owner_id
-            dog_to_update.name = name
-            dog_to_update.birth_date = birth_date
-            dog_to_update.breed = breed
-            dog_to_update.height = height
-            dog_to_update.weight = weight
-            dog_to_update.food_per_day = food_per_day
-            dog_to_update.gender = gender
-            dog_to_update.castrated = castrated
-            dog_to_update.character = character
-            dog_to_update.sociable = sociable
-            dog_to_update.training = training
-            dog_to_update.img_url = img_url
+            dog_to_update = session.query(Dod).filter(Dog.dog_id == dog_id).first()
+            for key in updated_data:
+                setattr(dog_to_update, key, updated_data.get(key))
             session.commit()
 
 

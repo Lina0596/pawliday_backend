@@ -26,10 +26,23 @@ def add_sitter():
     return jsonify(sitters), 200
 
 
+@app.route('/api/sitters/<int:sitter_id>', methods=['PUT'])
+def update_sitter(sitter_id):
+    updated_data = request.get_json()
+    data_manager.update_sitter(sitter_id=sitter_id, updated_data=updated_data)
+    return jsonify({"message": f"Sitter with {sitter_id} successfully updated."}), 200
+
+
 @app.route('/api/owners', methods=['GET'])
 def get_all_owners():
     owners = data_manager.get_all_owners()
     return jsonify(owners), 200
+
+
+@app.route('/api/owners/<int:owner_id>', methods=['GET'])
+def get_owner(owner_id):
+    owner = data_manager.get_owner(owner_id=owner_id)
+    return jsonify(owner), 200
 
 
 @app.route('/api/owners', methods=['GET', 'POST'])
@@ -40,6 +53,13 @@ def add_owner():
         return jsonify({"message": f"Owner successfully added."}), 201
     owners = data_manager.get_all_owners()
     return jsonify(owners), 200
+
+
+@app.route('/api/owners/<int:owner_id>', methods=['PUT'])
+def update_owner(owner_id):
+    updated_data = request.get_json()
+    data_manager.update_owner(owner_id=owner_id, updated_data=updated_data)
+    return jsonify({"message": f"Owner with {owner_id} successfully updated."}), 200
 
 
 @app.route('/api/owners/<int:owner_id>', methods=['DELETE'])
@@ -64,13 +84,26 @@ def add_dog(owner_id):
     return jsonify(owner_dogs), 200
 
 
-@app.route('/api/dog/<int:dog_id>', methods=['GET'])
+@app.route('/api/dogs', methods=['GET'])
+def get_all_dogs():
+    dogs = data_manager.get_all_dogs()
+    return jsonify(dogs), 200
+
+
+@app.route('/api/dogs/<int:dog_id>', methods=['GET'])
 def get_dog(dog_id):
     dog = data_manager.get_dog(dog_id)
     return jsonify(dog), 200
 
 
-@app.route('/api/dog/<int:dog_id>', methods=['DELETE'])
+@app.route('/api/dogs/<int:dog_id>', methods=['PUT'])
+def update_dog(dog_id):
+    updated_data = request.get_json()
+    data_manager.update_dog(dog_id=dog_id, updated_data=updated_data)
+    return jsonify({"message": f"Dog with {dog_id} successfully updated."}), 200
+
+
+@app.route('/api/dogs/<int:dog_id>', methods=['DELETE'])
 def delete_dog(dog_id):
     data_manager.delete_dog(dog_id=dog_id)
     return jsonify({"message": f"Dog with id {dog_id} successfully deleted."}), 200
