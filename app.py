@@ -17,6 +17,15 @@ def get_all_sitters():
         return jsonify(sitters), 200
     except LookupError as e:
         return jsonify({"message": str(e)}), 404
+    
+
+@app.route('/api/sitters/<int:sitter_id>', methods=['GET'])
+def get_sitter(sitter_id):
+    try:
+        sitter = data_manager.get_sitter(sitter_id=sitter_id)
+        return jsonify(sitter), 200
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 404
 
 
 @app.route('/api/sitters', methods=['GET', 'POST'])

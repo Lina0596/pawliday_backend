@@ -26,6 +26,17 @@ class SQLiteHandler(AbstractDataHandler):
             sitters = [to_dict(obj) for obj in sitters_obj]
             return sitters
         
+        
+    def get_sitter(self, sitter_id):
+        """
+        """
+        with self.Session() as session:
+            sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+            if not sitter_obj:
+                raise ValueError(f"No sitter found with id {sitter_id}")
+            sitter = to_dict(sitter_obj)
+            return sitter
+        
 
     def add_sitter(self, new_sitter):
         """
