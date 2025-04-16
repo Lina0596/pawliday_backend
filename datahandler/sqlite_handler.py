@@ -3,7 +3,6 @@ from sqlalchemy.orm import sessionmaker
 from datahandler.abstract_handler import AbstractDataHandler
 from datahandler.models import Base, Sitter, Owner, Dog, Stay, Trick, Knowledge
 from sqlalchemy.inspection import inspect
-import json
 
 
 def to_dict(obj):
@@ -22,9 +21,11 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             sitters_obj = session.query(Sitter).all()
+            if not sitters_obj:
+                raise LookupError(f"No sitters found.")
             sitters = [to_dict(obj) for obj in sitters_obj]
             return sitters
-
+        
 
     def add_sitter(self, new_sitter):
         """
@@ -44,6 +45,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             sitter_to_update = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+            if not sitter_to_update:
+                raise ValueError(f"No sitter found with id {sitter_id}")
             for key in updated_data:
                 setattr(sitter_to_update, key, updated_data.get(key))
             session.commit()
@@ -54,6 +57,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             owners_obj = session.query(Owner).all()
+            if not owners_obj:
+                raise LookupError(f"No owners found.")
             owners = [to_dict(obj) for obj in owners_obj]
             return owners
         
@@ -63,6 +68,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+            if not owner_obj:
+                raise ValueError(f"No owner found with id {owner_id}")
             owner = to_dict(owner_obj)
             return owner
         
@@ -87,6 +94,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             owner_to_update = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+            if not owner_to_update:
+                raise ValueError(f"No owner found with id {owner_id}")
             for key in updated_data:
                 setattr(owner_to_update, key, updated_data.get(key))
             session.commit()
@@ -97,6 +106,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             owner_to_delete = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+            if not owner_to_delete:
+                raise ValueError(f"No owner found with id {owner_id}")
             dogs_to_delete = session.query(Dog).filter(Dog.owner_id == owner_id).all()
             session.delete(owner_to_delete)
             for dog in dogs_to_delete:
@@ -132,7 +143,12 @@ class SQLiteHandler(AbstractDataHandler):
         """
         """
         with self.Session() as session:
+            owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+            if not owner_obj:
+                raise ValueError(f"No owner found with id {owner_id}")
             owner_dogs_obj = session.query(Dog).filter(Dog.owner_id == owner_id).all()
+            if not owner_dogs_obj:
+                raise LookupError(f"Owner with id {owner_id} has no dogs.")
             owner_dogs = [to_dict(obj) for obj in owner_dogs_obj]
             return owner_dogs
         
@@ -142,6 +158,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             dogs_obj = session.query(Dog).all()
+            if not dogs_obj:
+                raise LookupError(f"No dogs found.")
             dogs = [to_dict(obj) for obj in dogs_obj]
             return dogs
         
@@ -151,7 +169,9 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             dog_obj = session.query(Dog).filter(Dog.dog_id == dog_id).first()
-            dog = to_dict(dog_obj)
+            if not dog_obj:
+                raise ValueError(f"No dog found with id {dog_id}")
+            dog = [to_dict(dog_obj)]
             return dog
     
 
@@ -159,7 +179,9 @@ class SQLiteHandler(AbstractDataHandler):
         """
         """
         with self.Session() as session:
-            dog_to_update = session.query(Dod).filter(Dog.dog_id == dog_id).first()
+            dog_to_update = session.query(Dog).filter(Dog.dog_id == dog_id).first()
+            if not dog_to_update:
+                raise ValueError(f"No dog found with id {dog_id}")
             for key in updated_data:
                 setattr(dog_to_update, key, updated_data.get(key))
             session.commit()
@@ -170,6 +192,8 @@ class SQLiteHandler(AbstractDataHandler):
         """
         with self.Session() as session:
             dog_to_delete = session.query(Dog).filter(Dog.dog_id == dog_id).first()
+            if not dog_to_delete:
+                raise ValueError(f"No dog found with id {dog_id}")
             session.delete(dog_to_delete)
             session.commit()
 
