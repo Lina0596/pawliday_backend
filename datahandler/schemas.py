@@ -103,6 +103,3 @@ class UpdateDogSchema(BaseModel):
 
     class Config:
         from_attribute = True
-
-
-# owner = OwnerSchema(first_name="Selene", last_name="Shadowbrook", email="selene@example.com", phone_number="678b")
