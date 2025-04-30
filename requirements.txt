@@ -3,5 +3,4 @@ flask_cors
 sqlalchemy
 pydantic==2.11.3
 phonenumbers
-gunicorn
 email_validator
