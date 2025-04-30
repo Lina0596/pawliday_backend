@@ -3,6 +3,10 @@ from sqlalchemy.orm import sessionmaker
 from datahandler.abstract_handler import AbstractDataHandler
 from datahandler.models import Base, Sitter, Owner, Dog, Stay, Trick, Knowledge
 from sqlalchemy.inspection import inspect
+from datahandler.schemas import SitterSchema, UpdateSitterSchema, OwnerSchema, UpdateOwnerSchema, DogSchema, UpdateDogSchema
+from sqlalchemy.exc import IntegrityError, OperationalError
+from pydantic import ValidationError
+from exceptions import NotFoundError, InvalidInputError, DatabaseError
 
 
 def to_dict(obj):
@@ -17,212 +21,335 @@ class SQLiteHandler(AbstractDataHandler):
 
 
     def get_all_sitters(self):
-        """
-        """
-        with self.Session() as session:
-            sitters_obj = session.query(Sitter).all()
-            if not sitters_obj:
-                raise LookupError(f"No sitters found.")
-            sitters = [to_dict(obj) for obj in sitters_obj]
-            return sitters
+        try:
+            with self.Session.begin() as session:
+                sitters_obj = session.query(Sitter).all()
+                if not sitters_obj:
+                    raise NotFoundError("No sitters found")
+                sitters = [to_dict(obj) for obj in sitters_obj]
+                return sitters
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
         
         
     def get_sitter(self, sitter_id):
-        """
-        """
-        with self.Session() as session:
-            sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
-            if not sitter_obj:
-                raise ValueError(f"No sitter found with id {sitter_id}")
-            sitter = to_dict(sitter_obj)
-            return sitter
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                sitter = to_dict(sitter_obj)
+                return sitter
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
         
 
-    def add_sitter(self, new_sitter):
-        """
-        """
-        with self.Session() as session:
-            new_sitter = Sitter(
-                first_name=new_sitter.get('first_name'),
-                last_name=new_sitter.get('last_name'),
-                email=new_sitter.get('email'),
-            )
-            session.add(new_sitter)
-            session.commit()
+    def add_sitter(self, new_sitter_data):
+        try:
+            with self.Session.begin() as session:
+                valid_data = SitterSchema(**new_sitter_data)
+                new_sitter = Sitter(
+                    first_name=valid_data.first_name,
+                    last_name=valid_data.last_name,
+                    email=valid_data.email,
+                )
+                session.add(new_sitter)
+                session.commit()
+        except IntegrityError:
+            raise InvalidInputError("Email already exists")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
     def update_sitter(self, sitter_id, updated_data):
-        """
-        """
-        with self.Session() as session:
-            sitter_to_update = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
-            if not sitter_to_update:
-                raise ValueError(f"No sitter found with id {sitter_id}")
-            for key in updated_data:
-                setattr(sitter_to_update, key, updated_data.get(key))
-            session.commit()
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_to_update = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_to_update:
+                    raise NotFoundError("No sitter found")
+                valid_updated_data = UpdateSitterSchema(**updated_data).model_dump(exclude_unset=True)
+                for key, value in valid_updated_data.items():
+                    setattr(sitter_to_update, key, value)
+                session.commit()
+        except IntegrityError:
+            raise InvalidInputError("Email already exists")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
-    def get_all_owners(self):
-        """
-        """
-        with self.Session() as session:
-            owners_obj = session.query(Owner).all()
-            if not owners_obj:
-                raise LookupError(f"No owners found.")
-            owners = [to_dict(obj) for obj in owners_obj]
-            return owners
+    def get_all_owners(self, sitter_id):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                owners_obj = session.query(Owner).filter(Owner.sitter_id == sitter_id).all()
+                if not owners_obj:
+                    raise NotFoundError("No owners found")
+                owners = [to_dict(obj) for obj in owners_obj]
+                return owners
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
         
     
-    def get_owner(self, owner_id):
-        """
-        """
-        with self.Session() as session:
-            owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id).first()
-            if not owner_obj:
-                raise ValueError(f"No owner found with id {owner_id}")
-            owner = to_dict(owner_obj)
-            return owner
+    def get_owner(self, sitter_id, owner_id):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not owner_id.isdigit():
+                    raise InvalidInputError("owner_id must be a number")
+                owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id, Owner.sitter_id == sitter_id).first()
+                if not owner_obj:
+                    raise NotFoundError("No owner found")
+                owner = to_dict(owner_obj)
+                return owner
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
         
     
-    def add_owner(self, new_owner):
-        """
-        """
-        with self.Session() as session:
-            new_owner = Owner(
-                sitter_id=1,
-                first_name=new_owner.get('first_name'),
-                last_name=new_owner.get('last_name'),
-                email=new_owner.get('email'),
-                phone_number=new_owner.get('phone_number')
-            )
-            session.add(new_owner)
-            session.commit()
+    def add_owner(self, sitter_id, new_owner_data):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                valid_data = OwnerSchema(**new_owner_data)
+                new_owner = Owner(
+                    sitter_id=sitter_id,
+                    first_name=valid_data.first_name,
+                    last_name=valid_data.last_name,
+                    email=valid_data.email,
+                    phone_number=valid_data.phone_number
+                )
+                session.add(new_owner)
+                session.commit()
+        except IntegrityError:
+            raise InvalidInputError("Email or phone number already exists")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
-    def update_owner(self, owner_id, updated_data):
-        """
-        """
-        with self.Session() as session:
-            owner_to_update = session.query(Owner).filter(Owner.owner_id == owner_id).first()
-            if not owner_to_update:
-                raise ValueError(f"No owner found with id {owner_id}")
-            for key in updated_data:
-                setattr(owner_to_update, key, updated_data.get(key))
-            session.commit()
+    def update_owner(self, sitter_id, owner_id, updated_data):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not owner_id.isdigit():
+                    raise InvalidInputError("owner_id must be a number")
+                owner_to_update = session.query(Owner).filter(Owner.owner_id == owner_id, Owner.sitter_id == sitter_id).first()
+                if not owner_to_update:
+                    raise NotFoundError("No owner found")
+                valid_updated_data = UpdateOwnerSchema(**updated_data).model_dump(exclude_unset=True)
+                for key, value in valid_updated_data.items():
+                    setattr(owner_to_update, key, value)
+                session.commit()
+        except IntegrityError:
+            raise InvalidInputError("Email or phone number already exists")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
-    def delete_owner(self, owner_id):
-        """
-        """
-        with self.Session() as session:
-            owner_to_delete = session.query(Owner).filter(Owner.owner_id == owner_id).first()
-            if not owner_to_delete:
-                raise ValueError(f"No owner found with id {owner_id}")
-            dogs_to_delete = session.query(Dog).filter(Dog.owner_id == owner_id).all()
-            session.delete(owner_to_delete)
-            for dog in dogs_to_delete:
-                session.delete(dog)
-            session.commit()
+    def delete_owner(self, sitter_id, owner_id):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not owner_id.isdigit():
+                    raise InvalidInputError("owner_id must be a number")
+                owner_to_delete = session.query(Owner).filter(Owner.owner_id == owner_id, Owner.sitter_id == sitter_id).first()
+                if not owner_to_delete:
+                    raise NotFoundError("No owner found")
+                dogs_to_delete = session.query(Dog).filter(Dog.owner_id == owner_id).all()
+                session.delete(owner_to_delete)
+                for dog in dogs_to_delete:
+                    session.delete(dog)
+                session.commit()
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
-    def add_dog(self, owner_id, new_dog):
-        """
-        """
-        with self.Session() as session:
-            new_dog = Dog(
-                chip_id=new_dog.get('chip_id'),
-                owner_id=owner_id,
-                name=new_dog.get('name'),
-                birth_date=new_dog.get('birth_date'),
-                breed=new_dog.get('breed'),
-                height=new_dog.get('height'),
-                weight=new_dog.get('weight'),
-                food_per_day=new_dog.get('food_per_day'),
-                gender=new_dog.get('gender'),
-                castrated=new_dog.get('castrated'),
-                character=new_dog.get('character'),
-                sociable=new_dog.get('sociable'),
-                training=new_dog.get('training'),
-                img_url=new_dog.get('img_url')
-            )
-            session.add(new_dog)
-            session.commit()
+    def add_dog(self, sitter_id, owner_id, new_dog_data):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not owner_id.isdigit():
+                    raise InvalidInputError("owner_id must be a number")
+                owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id, Owner.sitter_id == sitter_id).first()
+                if not owner_obj:
+                    raise NotFoundError("No owner found")
+                valid_data = DogSchema(**new_dog_data)
+                new_dog = Dog(
+                    chip_id=valid_data.chip_id,
+                    owner_id=owner_id,
+                    name=valid_data.name,
+                    birth_date=valid_data.birth_date,
+                    breed=valid_data.breed,
+                    height=valid_data.height,
+                    weight=valid_data.weight,
+                    food_per_day=valid_data.food_per_day,
+                    gender=valid_data.gender,
+                    castrated=valid_data.castrated,
+                    character=valid_data.character,
+                    sociable=valid_data.sociable,
+                    training=valid_data.training,
+                    img_url=valid_data.img_url
+                )
+                session.add(new_dog)
+                session.commit()
+        except IntegrityError:
+            raise InvalidInputError("chip id already exists")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
     
     
-    def get_owner_dogs(self, owner_id):
-        """
-        """
-        with self.Session() as session:
-            owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id).first()
-            if not owner_obj:
-                raise ValueError(f"No owner found with id {owner_id}")
-            owner_dogs_obj = session.query(Dog).filter(Dog.owner_id == owner_id).all()
-            if not owner_dogs_obj:
-                raise LookupError(f"Owner with id {owner_id} has no dogs.")
-            owner_dogs = [to_dict(obj) for obj in owner_dogs_obj]
-            return owner_dogs
+    def get_owner_dogs(self, sitter_id, owner_id,):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not owner_id.isdigit():
+                    raise InvalidInputError("owner_id must be a number")
+                owner_obj = session.query(Owner).filter(Owner.owner_id == owner_id).first()
+                if not owner_obj:
+                    raise NotFoundError("No owner found")
+                owner_dogs_obj = session.query(Dog).join(Owner).filter(Owner.owner_id == owner_id, Owner.sitter_id == sitter_id).all()
+                if not owner_dogs_obj:
+                    raise NotFoundError("No dogs found")
+                owner_dogs = [to_dict(obj) for obj in owner_dogs_obj]
+                return owner_dogs
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
         
 
-    def get_all_dogs(self):
-        """
-        """
-        with self.Session() as session:
-            dogs_obj = session.query(Dog).all()
-            if not dogs_obj:
-                raise LookupError(f"No dogs found.")
-            dogs = [to_dict(obj) for obj in dogs_obj]
-            return dogs
+    def get_all_dogs(self, sitter_id):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                dogs_obj = session.query(Dog).join(Owner).filter(Owner.sitter_id == sitter_id).all()
+                if not dogs_obj:
+                    raise NotFoundError("No dogs found")
+                dogs = [to_dict(obj) for obj in dogs_obj]
+                return dogs
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
         
 
-    def get_dog(self, dog_id):
-        """
-        """
-        with self.Session() as session:
-            dog_obj = session.query(Dog).filter(Dog.dog_id == dog_id).first()
-            if not dog_obj:
-                raise ValueError(f"No dog found with id {dog_id}")
-            dog = [to_dict(dog_obj)]
-            return dog
+    def get_dog(self, sitter_id, dog_id):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not dog_id.isdigit():
+                    raise InvalidInputError("dog_id must be a number")
+                dog_obj = session.query(Dog).join(Owner).filter(Dog.dog_id == dog_id, Owner.sitter_id == sitter_id).first()
+                if not dog_obj:
+                    raise NotFoundError("No dog found")
+                dog = [to_dict(dog_obj)]
+                return dog
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
     
 
-    def update_dog(self, dog_id, updated_data):
-        """
-        """
-        with self.Session() as session:
-            dog_to_update = session.query(Dog).filter(Dog.dog_id == dog_id).first()
-            if not dog_to_update:
-                raise ValueError(f"No dog found with id {dog_id}")
-            for key in updated_data:
-                setattr(dog_to_update, key, updated_data.get(key))
-            session.commit()
+    def update_dog(self, sitter_id, dog_id, updated_data):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not dog_id.isdigit():
+                    raise InvalidInputError("dog_id must be a number")
+                dog_to_update = session.query(Dog).join(Owner).filter(Dog.dog_id == dog_id, Owner.sitter_id == sitter_id).first()
+                if not dog_to_update:
+                    raise NotFoundError("No dog found")
+                valid_updated_data = UpdateDogSchema(**updated_data).model_dump(exclude_unset=True)
+                for key, value in valid_updated_data.items():
+                    setattr(dog_to_update, key, value)
+                session.commit()
+        except IntegrityError:
+            raise InvalidInputError("chip id already exists")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
-    def delete_dog(self, dog_id):
-        """
-        """
-        with self.Session() as session:
-            dog_to_delete = session.query(Dog).filter(Dog.dog_id == dog_id).first()
-            if not dog_to_delete:
-                raise ValueError(f"No dog found with id {dog_id}")
-            session.delete(dog_to_delete)
-            session.commit()
+    def delete_dog(self, sitter_id, dog_id):
+        try:
+            with self.Session.begin() as session:
+                if not sitter_id.isdigit():
+                    raise InvalidInputError("sitter_id must be a number")
+                sitter_obj = session.query(Sitter).filter(Sitter.sitter_id == sitter_id).first()
+                if not sitter_obj:
+                    raise NotFoundError("No sitter found")
+                if not dog_id.isdigit():
+                    raise InvalidInputError("dog_id must be a number")
+                dog_to_delete = session.query(Dog).join(Owner).filter(Dog.dog_id == dog_id, Owner.sitter_id == sitter_id).first()
+                if not dog_to_delete:
+                    raise NotFoundError("No dog found")
+                session.delete(dog_to_delete)
+                session.commit()
+        except OperationalError:
+            raise DatabaseError("Database unavailable")
 
 
 # create database
 # data_manager = SQLiteHandler('pawliday.db')
 
 # create sitters
-# data_manager.add_sitter({"first_name": "Lina", "last_name": "Dahlhaus", "email": "lina.dahlhaus@icloud.com"})
+# data_manager.add_sitter({"first_name": "Jane", "last_name": "Doe", "email": "jane.doe@example.com"})
 
 # create owners
-# data_manager.add_owner({"first_name": "Leo", "last_name": "Storm", "email": "leo.storm@example.com", "phone_number": "004916055667788"})
-# data_manager.add_owner({"first_name": "Finn", "last_name": "Wilder", "email": "finn.wilder@example.com", "phone_number": "004917133445566"})
-# data_manager.add_owner({"first_name": "Zara", "last_name": "Nightshade", "email": "zara.nightshade@example.com", "phone_number": "004917055667788"})
-# data_manager.add_owner({"first_name": "Ivy", "last_name": "Blackthorn", "email": "maya.blackthorn@example.com", "phone_number": "004917699887766"})
-# data_manager.add_owner({"first_name": "Kai", "last_name": "Ironhart", "email": "kai.ironhart@example.com", "phone_number": "004915744556677"})
-# data_manager.add_owner({"first_name": "Nova", "last_name": "Winters", "email": "nova.winters@example.com", "phone_number": "004915277889911"})
-# data_manager.add_owner({"first_name": "Selene", "last_name": "Shadowbrook", "email": "selene.shadowbrook@example.com", "phone_number": "004917033442211"})
+# data_manager.add_owner({"first_name": "Leo", "last_name": "Storm", "email": "leo.storm@example.com", "phone_number": "+49 163 2438301"})
+# data_manager.add_owner({"first_name": "Finn", "last_name": "Wilder", "email": "finn.wilder@example.com", "phone_number": "+49 177 8297922"})
+# data_manager.add_owner({"first_name": "Zara", "last_name": "Nightshade", "email": "zara.nightshade@example.com", "phone_number": "+49 178 7069665"})
+# data_manager.add_owner({"first_name": "Ivy", "last_name": "Blackthorn", "email": "maya.blackthorn@example.com", "phone_number": "+49 175 6341714"})
+# data_manager.add_owner({"first_name": "Kai", "last_name": "Ironhart", "email": "kai.ironhart@example.com", "phone_number": "+49 171 0006303"})
+# data_manager.add_owner({"first_name": "Nova", "last_name": "Winters", "email": "nova.winters@example.com", "phone_number": "+49 151 3903711"})
+# data_manager.add_owner({"first_name": "Selene", "last_name": "Shadowbrook", "email": "selene.shadowbrook@example.com", "phone_number": "+49 170 1373380"})
 
 # create dogs
 # data_manager.add_dog(owner_id=1, new_dog={"chip_id": 123456789012345, "name": "Luna", "birth_date": "2017-03-15", "breed": "Mixed breed", "height": 55, "weight": 25, "food_per_day": 500, "gender": "female", "castrated": True, "character": "sensible", "sociable": True, "training": True, "img_url": "https://cdn.pixabay.com/photo/2019/04/05/13/56/shepherd-mongrel-4105106_1280.jpg"})
