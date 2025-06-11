@@ -11,6 +11,11 @@ CORS(app)
 data_manager = SQLiteHandler('pawliday.db')
 
 
+@app.route('/api/wakeup', methods=['GET'])
+def server_wakeup():
+    return jsonify({"message": "Server awake"}), 200
+
+
 @app.route('/api/sitters', methods=['GET'])
 def get_all_sitters():
     sitters = data_manager.get_all_sitters()
