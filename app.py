@@ -61,9 +61,9 @@ def get_owner(sitter_id, owner_id):
 def add_owner(sitter_id):
     if request.method == 'POST':
         new_owner_data = request.get_json()
-        data_manager.add_owner(sitter_id=sitter_id, new_owner_data=new_owner_data)
-        return jsonify({"message": "Owner successfully added"}), 201
-    owners = data_manager.get_all_owners()
+        created_owner = data_manager.add_owner(sitter_id=sitter_id, new_owner_data=new_owner_data)
+        return jsonify(created_owner), 201
+    owners = data_manager.get_all_owners(sitter_id)
     return jsonify(owners), 200
 
 

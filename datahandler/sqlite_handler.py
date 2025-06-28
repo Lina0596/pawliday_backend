@@ -138,7 +138,9 @@ class SQLiteHandler(AbstractDataHandler):
                     phone_number=valid_data.phone_number
                 )
                 session.add(new_owner)
-                session.commit()
+                session.flush()
+                created_owner = to_dict(new_owner)
+                return created_owner
         except IntegrityError:
             raise InvalidInputError("Email or phone number already exists")
         except ValidationError:
