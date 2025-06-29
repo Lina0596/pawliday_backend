@@ -227,7 +227,9 @@ class SQLiteHandler(AbstractDataHandler):
                     img_url=valid_data.img_url
                 )
                 session.add(new_dog)
-                session.commit()
+                session.flush()
+                created_dog = to_dict(new_dog)
+                return created_dog
         except IntegrityError:
             raise InvalidInputError("chip id already exists")
         except ValidationError:

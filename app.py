@@ -90,8 +90,8 @@ def get_owner_dogs(sitter_id, owner_id):
 def add_dog(sitter_id, owner_id):
     if request.method == 'POST':
         new_dog_data = request.get_json()
-        data_manager.add_dog(sitter_id=sitter_id, owner_id=owner_id, new_dog_data=new_dog_data)
-        return jsonify({"message": "Dog successfully added"}), 201
+        created_dog = data_manager.add_dog(sitter_id=sitter_id, owner_id=owner_id, new_dog_data=new_dog_data)
+        return jsonify(created_dog), 201
     owner_dogs = data_manager.get_owner_dogs(owner_id)
     return jsonify(owner_dogs), 200
 
