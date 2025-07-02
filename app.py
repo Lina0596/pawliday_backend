@@ -2,6 +2,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datahandler.sqlite_handler import SQLiteHandler
 from exceptions import NotFoundError, InvalidInputError, DatabaseError
+from imagekitio import ImageKit
+from dotenv import load_dotenv
+import os
 
 
 app = Flask(__name__)
@@ -11,9 +14,24 @@ CORS(app)
 data_manager = SQLiteHandler('pawliday.db')
 
 
+load_dotenv()
+
+imagekit = ImageKit(
+    public_key=os.environ['IMAGEKIT_PUBLIC_KEY'],
+    private_key=os.environ['IMAGEKIT_PRIVATE_KEY'],
+    url_endpoint=os.environ['IMAGEKIT_URL_ENDPOINT']
+)
+
+
 @app.route('/api/wakeup', methods=['GET'])
 def server_wakeup():
     return jsonify({"message": "Server awake"}), 200
+
+
+@app.route('/api/auth-params', methods=['GET'])
+def get_auth_params():
+    auth_params = imagekit.get_authentication_parameters()
+    return jsonify(auth_params)
 
 
 @app.route('/api/sitters', methods=['GET'])
