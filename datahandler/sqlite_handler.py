@@ -32,16 +32,22 @@ class SQLiteHandler(AbstractDataHandler):
         Base.metadata.create_all(self.engine)
 
 
-    def get_all_sitters(self):
+    def authenticate_sitter(self, login_data):
         try:
             with self.Session.begin() as session:
-                sitters_obj = session.query(Sitter).all()
-                if not sitters_obj:
-                    raise NotFoundError("No sitters found")
-                sitters = [to_dict(obj) for obj in sitters_obj]
-                return sitters
+                valid_data = LoginSchema(**login_data)
+                sitter_obj = session.query(Sitter).filter(Sitter.email == valid_data.email).first()
+                if not sitter_obj:
+                    raise InvalidInputError("Email or password is wrong")
+                if checkpw(valid_data.password.encode('utf-8'), sitter_obj.password.encode('utf-8')):
+                    sitter = to_dict(sitter_obj)
+                    return sitter
+                else:
+                    raise InvalidInputError("Email or password is wrong")
+        except ValidationError:
+            raise InvalidInputError("Invalid input")
         except OperationalError:
-            raise DatabaseError("Database unavailable")
+            raise DatabaseError("Database unavailable")        
         
         
     def get_sitter(self, sitter_id):
@@ -80,24 +86,6 @@ class SQLiteHandler(AbstractDataHandler):
         except OperationalError:
             raise DatabaseError("Database unavailable")
         
-
-    def authenticate_sitter(self, login_data):
-        try:
-            with self.Session.begin() as session:
-                valid_data = LoginSchema(**login_data)
-                sitter_obj = session.query(Sitter).filter(Sitter.email == valid_data.email).first()
-                if not sitter_obj:
-                    raise InvalidInputError("Email or password is wrong")
-                if checkpw(valid_data.password.encode('utf-8'), sitter_obj.password.encode('utf-8')):
-                    sitter = to_dict(sitter_obj)
-                    return sitter
-                else:
-                    raise InvalidInputError("Email or password is wrong")
-        except ValidationError:
-            raise InvalidInputError("Invalid input")
-        except OperationalError:
-            raise DatabaseError("Database unavailable")
-
 
     def update_sitter(self, sitter_id, updated_data):
         try:

@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import JWTManager, create_access_token, set_access_cookies, unset_jwt_cookies, jwt_required, get_jwt_identity, get_jwt
 from functools import wraps
 from datahandler.sqlite_handler import SQLiteHandler
 from exceptions import NotFoundError, InvalidInputError, DatabaseError
@@ -20,6 +20,11 @@ load_dotenv()
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
 app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
+app.config['JWT_ACCESS_COOKIE_NAME'] = 'access_token'
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_COOKIE_SECURE"] = True
+app.config["JWT_COOKIE_HTTPONLY"] = True
+app.config["JWT_COOKIE_SAMESITE"] = "None"
 jwt = JWTManager(app)
 
 
@@ -46,7 +51,16 @@ def login():
     login_data = request.get_json()
     sitter = data_manager.authenticate_sitter(login_data=login_data)
     access_token = create_access_token(identity=str(sitter['sitter_id']))
-    return jsonify(access_token=access_token), 200
+    response = jsonify({"message": "Login successfully"})
+    set_access_cookies(response, access_token)
+    return response, 200
+
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    response = jsonify({"message": "Logout successfully"})
+    unset_jwt_cookies(response)
+    return response, 200
 
 
 @app.route('/api/registration', methods=['POST'])
