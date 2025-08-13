@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+from functools import wraps
 from datahandler.sqlite_handler import SQLiteHandler
 from exceptions import NotFoundError, InvalidInputError, DatabaseError
 from imagekitio import ImageKit
@@ -9,17 +11,22 @@ import os
 
 app = Flask(__name__)
 CORS(app)
-
-
 data_manager = SQLiteHandler('pawliday.db')
 
 
 load_dotenv()
 
+
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
+app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
+jwt = JWTManager(app)
+
+
 imagekit = ImageKit(
-    public_key=os.environ['IMAGEKIT_PUBLIC_KEY'],
-    private_key=os.environ['IMAGEKIT_PRIVATE_KEY'],
-    url_endpoint=os.environ['IMAGEKIT_URL_ENDPOINT']
+    public_key=os.environ.get('IMAGEKIT_PUBLIC_KEY'),
+    private_key=os.environ.get('IMAGEKIT_PRIVATE_KEY'),
+    url_endpoint=os.environ.get('IMAGEKIT_URL_ENDPOINT')
 )
 
 
@@ -34,49 +41,66 @@ def get_auth_params():
     return jsonify(auth_params)
 
 
-@app.route('/api/sitters', methods=['GET'])
-def get_all_sitters():
-    sitters = data_manager.get_all_sitters()
-    return jsonify(sitters), 200
+@app.route('/api/login', methods=['POST'])
+def login():
+    login_data = request.get_json()
+    sitter = data_manager.authenticate_sitter(login_data=login_data)
+    access_token = create_access_token(identity=str(sitter['sitter_id']))
+    return jsonify(access_token=access_token), 200
+
+
+@app.route('/api/registration', methods=['POST'])
+def registration():
+    new_sitter_data = request.get_json()
+    data_manager.add_sitter(new_sitter_data=new_sitter_data)
+    return jsonify({"message": "Registration successfully"}), 201
     
 
-@app.route('/api/sitters/<sitter_id>', methods=['GET'])
-def get_sitter(sitter_id):
+@app.route('/api/sitter', methods=['GET'])
+@jwt_required()
+def get_sitter():
+    sitter_id = get_jwt_identity()
     sitter = data_manager.get_sitter(sitter_id=sitter_id)
     return jsonify(sitter), 200
 
 
-@app.route('/api/sitters', methods=['GET', 'POST'])
-def add_sitter():
-    if request.method == 'POST':
-        new_sitter_data = request.get_json()
-        data_manager.add_sitter(new_sitter_data=new_sitter_data)
-        return jsonify({"message": "Sitter successfully added"}), 201
-    sitters = data_manager.get_all_sitters()
-    return jsonify(sitters), 200
-
-
-@app.route('/api/sitters/<sitter_id>', methods=['PUT'])
-def update_sitter(sitter_id):
+@app.route('/api/sitter/update', methods=['PUT'])
+@jwt_required()
+def update_sitter():
+    sitter_id = get_jwt_identity()
     updated_data = request.get_json()
     data_manager.update_sitter(sitter_id=sitter_id, updated_data=updated_data)
-    return jsonify({"message": "Sitter successfully updated"}), 200
+    return jsonify({"message": "Sitter profile successfully updated"}), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners', methods=['GET'])
-def get_all_owners(sitter_id):
-    owners = data_manager.get_all_owners(sitter_id)
+@app.route('/api/sitter/delete', methods=['DELETE'])
+@jwt_required()
+def delete_sitter():
+    sitter_id = get_jwt_identity()
+    data_manager.delete_sitter(sitter_id=sitter_id)
+    return jsonify({"message": "Sitter profile successfully deleted"}), 200
+
+
+@app.route('/api/sitter/owners', methods=['GET'])
+@jwt_required()
+def get_all_owners():
+    sitter_id = get_jwt_identity()
+    owners = data_manager.get_all_owners(sitter_id=sitter_id)
     return jsonify(owners), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners/<owner_id>', methods=['GET'])
-def get_owner(sitter_id, owner_id):
+@app.route('/api/sitter/owners/<owner_id>', methods=['GET'])
+@jwt_required()
+def get_owner(owner_id):
+    sitter_id = get_jwt_identity()
     owner = data_manager.get_owner(sitter_id=sitter_id, owner_id=owner_id)
     return jsonify(owner), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners', methods=['GET', 'POST'])
-def add_owner(sitter_id):
+@app.route('/api/sitters/owners/add', methods=['GET', 'POST'])
+@jwt_required()
+def add_owner():
+    sitter_id = get_jwt_identity()
     if request.method == 'POST':
         new_owner_data = request.get_json()
         created_owner = data_manager.add_owner(sitter_id=sitter_id, new_owner_data=new_owner_data)
@@ -85,27 +109,43 @@ def add_owner(sitter_id):
     return jsonify(owners), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners/<owner_id>', methods=['PUT'])
-def update_owner(sitter_id, owner_id):
+@app.route('/api/sitter/owners/<owner_id>/update', methods=['PUT'])
+@jwt_required()
+def update_owner(owner_id):
+    sitter_id = get_jwt_identity()
     updated_data = request.get_json()
     data_manager.update_owner(sitter_id=sitter_id, owner_id=owner_id, updated_data=updated_data)
     return jsonify({"message": f"Owner successfully updated"}), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners/<owner_id>', methods=['DELETE'])
-def delete_owner(sitter_id, owner_id):
+@app.route('/api/sitter/owners/<owner_id>/delete', methods=['DELETE'])
+@jwt_required()
+def delete_owner(owner_id):
+    sitter_id = get_jwt_identity()
     data_manager.delete_owner(sitter_id=sitter_id, owner_id=owner_id)
     return jsonify({"message": "Owner and associated dogs successfully deleted"}), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners/<owner_id>/dogs', methods=['GET'])
-def get_owner_dogs(sitter_id, owner_id):
-    owner_dogs = data_manager.get_owner_dogs(sitter_id=sitter_id, owner_id=owner_id)
-    return jsonify(owner_dogs), 200
+@app.route('/api/sitter/dogs', methods=['GET'])
+@jwt_required()
+def get_all_dogs():
+    sitter_id = get_jwt_identity()
+    dogs = data_manager.get_all_dogs(sitter_id=sitter_id)
+    return jsonify(dogs), 200
 
 
-@app.route('/api/sitters/<sitter_id>/owners/<owner_id>/dogs', methods=['GET', 'POST'])
-def add_dog(sitter_id, owner_id):
+@app.route('/api/sitter/dogs/<dog_id>', methods=['GET'])
+@jwt_required()
+def get_dog(dog_id):
+    sitter_id = get_jwt_identity()
+    dog = data_manager.get_dog(sitter_id=sitter_id, dog_id=dog_id)
+    return jsonify(dog), 200
+    
+
+@app.route('/api/sitter/owners/<owner_id>/dogs/add', methods=['GET', 'POST'])
+@jwt_required()
+def add_dog(owner_id):
+    sitter_id = get_jwt_identity()
     if request.method == 'POST':
         new_dog_data = request.get_json()
         created_dog = data_manager.add_dog(sitter_id=sitter_id, owner_id=owner_id, new_dog_data=new_dog_data)
@@ -114,29 +154,29 @@ def add_dog(sitter_id, owner_id):
     return jsonify(owner_dogs), 200
 
 
-@app.route('/api/sitters/<sitter_id>/dogs', methods=['GET'])
-def get_all_dogs(sitter_id):
-    dogs = data_manager.get_all_dogs(sitter_id=sitter_id)
-    return jsonify(dogs), 200
-
-
-@app.route('/api/sitters/<sitter_id>/dogs/<dog_id>', methods=['GET'])
-def get_dog(sitter_id, dog_id):
-    dog = data_manager.get_dog(sitter_id=sitter_id, dog_id=dog_id)
-    return jsonify(dog), 200
-
-
-@app.route('/api/sitters/<sitter_id>/dogs/<dog_id>', methods=['PUT'])
-def update_dog(sitter_id, dog_id):
+@app.route('/api/sitter/dogs/<dog_id>/update', methods=['PUT'])
+@jwt_required()
+def update_dog(dog_id):
+    sitter_id = get_jwt_identity()
     updated_data = request.get_json()
     data_manager.update_dog(sitter_id=sitter_id, dog_id=dog_id, updated_data=updated_data)
     return jsonify({"message": "Dog successfully updated"}), 200
 
 
-@app.route('/api/sitters/<sitter_id>/dogs/<dog_id>', methods=['DELETE'])
-def delete_dog(sitter_id, dog_id):
+@app.route('/api/sitter/dogs/<dog_id>/delete', methods=['DELETE'])
+@jwt_required()
+def delete_dog(dog_id):
+    sitter_id = get_jwt_identity()
     data_manager.delete_dog(sitter_id=sitter_id, dog_id=dog_id)
     return jsonify({"message": f"Dog successfully deleted"}), 200
+
+
+@app.route('/api/sitter/owners/<owner_id>/dogs', methods=['GET'])
+@jwt_required()
+def get_owner_dogs(owner_id):
+    sitter_id = get_jwt_identity()
+    owner_dogs = data_manager.get_owner_dogs(sitter_id=sitter_id, owner_id=owner_id)
+    return jsonify(owner_dogs), 200
     
 
 @app.errorhandler(NotFoundError)
@@ -152,6 +192,21 @@ def handle_invalid_input(e):
 @app.errorhandler(DatabaseError)
 def handle_db_error(e):
     return jsonify({"error": str(e)}), 503
+
+
+@jwt.unauthorized_loader
+def handle_missing_token(e):
+    return jsonify({"error": "Please login"}), 401
+
+
+@jwt.invalid_token_loader
+def handle_invalid_token(e):
+    return jsonify({"error": "Please login"}), 401
+
+
+@jwt.expired_token_loader
+def handle_expired_token(jwt_header, jwt_payload):
+    return jsonify({"error": "Please login"}), 401
 
 
 if __name__ == '__main__':

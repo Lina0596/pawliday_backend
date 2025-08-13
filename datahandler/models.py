@@ -13,6 +13,7 @@ class Sitter(Base):
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
+    password = Column(String(255), nullable=False)
 
 
     def __repr__(self):
@@ -84,17 +85,17 @@ class Dog(Base):
         img_url = {self.img_url})'''
 
 
-class Trick(Base):
+class Skill(Base):
     """
     """
-    __tablename__ = 'tricks'
-    trick_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    __tablename__ = 'skills'
+    skill_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     call = Column(String(255), nullable=False)
 
 
     def __repr__(self):
-        return f'''Trick(
-        trick_id = {self.trick_id},
+        return f'''Skill(
+        skill_id = {self.skill_id},
         call = {self.call})'''
 
 
@@ -104,7 +105,7 @@ class Knowledge(Base):
     __tablename__ = 'knowledges'
     knowledge_id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     dog_id = Column(ForeignKey('dogs.dog_id'), nullable=False)
-    trick_id = Column(ForeignKey('tricks.trick_id'), nullable=False)
+    skill_id = Column(ForeignKey('skills.skill_id'), nullable=False)
     knowledge = Column(Integer, nullable=False)
     
 
@@ -112,7 +113,7 @@ class Knowledge(Base):
         return f'''Knowledge(
         knowledge_id = {self.knowledge_id},
         dog_id = {self.dog_id},
-        trick_id = {self.trick_id},
+        skill_id = {self.skill_id},
         knowledge = {self.knowledge})'''
     
 

@@ -1,5 +1,7 @@
+bcrypt
 flask
 flask_cors
+flask_jwt_extended
 sqlalchemy
 pydantic==2.11.3
 phonenumbers
