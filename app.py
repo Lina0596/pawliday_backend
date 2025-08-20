@@ -10,7 +10,7 @@ import os
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, origins=["http://localhost:5174", "https://pawliday-frontend.onrender.com"])
 data_manager = SQLiteHandler('pawliday.db')
 
 
