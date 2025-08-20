@@ -21,14 +21,11 @@ app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
 app.config['JWT_ACCESS_LIFESPAN'] = {'hours': 24}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
 app.config['JWT_ACCESS_COOKIE_NAME'] = 'access_token'
-app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-app.config["JWT_COOKIE_HTTPONLY"] = True
-app.config["JWT_COOKIE_SAMESITE"] = "None"
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_COOKIE_SECURE'] = True
+app.config['JWT_COOKIE_HTTPONLY'] = True
+app.config['JWT_COOKIE_SAMESITE'] = 'None'
 
-if app.env == "development":
-    app.config["JWT_COOKIE_SECURE"] = False
-else:
-    app.config["JWT_COOKIE_SECURE"] = True
 
 jwt = JWTManager(app)
 
