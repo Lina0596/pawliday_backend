@@ -212,17 +212,17 @@ def handle_db_error(e):
 
 @jwt.unauthorized_loader
 def handle_missing_token(e):
-    return jsonify({"error": "Please login"}), 401
+    return jsonify({"error": str(e)}), 401
 
 
 @jwt.invalid_token_loader
 def handle_invalid_token(e):
-    return jsonify({"error": "Please login"}), 401
+    return jsonify({"error": str(e)}), 401
 
 
 @jwt.expired_token_loader
 def handle_expired_token(jwt_header, jwt_payload):
-    return jsonify({"error": "Please login"}), 401
+    return jsonify({"error": "Token has expired"}), 401
 
 
 if __name__ == '__main__':
