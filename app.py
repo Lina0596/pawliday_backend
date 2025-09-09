@@ -94,7 +94,9 @@ def update_sitter():
 def delete_sitter():
     sitter_id = get_jwt_identity()
     data_manager.delete_sitter(sitter_id=sitter_id)
-    return jsonify({"message": "Sitter profile successfully deleted"}), 200
+    response = jsonify({"message": "Sitter profile successfully deleted"})
+    unset_jwt_cookies(response)
+    return response, 200
 
 
 @app.route('/api/sitter/owners', methods=['GET'])
