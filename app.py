@@ -88,9 +88,9 @@ def get_sitter():
 def update_sitter():
     sitter_id = get_jwt_identity()
     updated_data = request.get_json()
-    data_manager.update_sitter(sitter_id=sitter_id, updated_data=updated_data)
+    updated_sitter = data_manager.update_sitter(sitter_id=sitter_id, updated_data=updated_data)
     csrf_token = get_jwt()["csrf"]
-    response = jsonify({"message": "Sitter profile successfully updated", "csrf_token": csrf_token})
+    response = jsonify({"sitter": updated_sitter, "message": "Sitter profile successfully updated", "csrf_token": csrf_token})
     return response, 200
 
 

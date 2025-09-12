@@ -102,6 +102,9 @@ class SQLiteHandler(AbstractDataHandler):
                 for key, value in valid_updated_data.items():
                     setattr(sitter_to_update, key, value)
                 session.commit()
+                session.refresh(sitter_to_update)
+                updated_sitter = to_dict(sitter_to_update)
+                return updated_sitter
         except IntegrityError:
             raise InvalidInputError("Email already exists")
         except ValidationError:
