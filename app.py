@@ -120,7 +120,7 @@ def get_owner(owner_id):
     sitter_id = get_jwt_identity()
     owner = data_manager.get_owner(sitter_id=sitter_id, owner_id=owner_id)
     csrf_token = get_jwt()["csrf"]
-    response = ({"owner": owner, "csrf_token": csrf_token})
+    response = jsonify({"owner": owner, "csrf_token": csrf_token})
     return response, 200
 
 
