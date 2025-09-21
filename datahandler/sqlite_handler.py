@@ -211,7 +211,8 @@ class SQLiteHandler(AbstractDataHandler):
                 valid_updated_data = UpdateOwnerSchema(**updated_data).model_dump(exclude_unset=True)
                 for key, value in valid_updated_data.items():
                     setattr(owner_to_update, key, value)
-                session.commit()
+                updated_owner = to_dict(owner_to_update)
+            return updated_owner
         except IntegrityError:
             raise InvalidInputError("Email or phone number already exists")
         except ValidationError:
@@ -336,7 +337,8 @@ class SQLiteHandler(AbstractDataHandler):
                 valid_updated_data = UpdateDogSchema(**updated_data).model_dump(exclude_unset=True)
                 for key, value in valid_updated_data.items():
                     setattr(dog_to_update, key, value)
-                session.commit()
+                updated_dog = to_dict(dog_to_update)
+            return updated_dog
         except IntegrityError:
             raise InvalidInputError("chip id already exists")
         except ValidationError:

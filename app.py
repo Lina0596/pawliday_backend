@@ -70,7 +70,7 @@ def logout():
 def registration():
     new_sitter_data = request.get_json()
     data_manager.add_sitter(new_sitter_data=new_sitter_data)
-    return jsonify({"message": "Registration successfully"}), 201
+    return jsonify({"message": "Registration successfully. Pleas login."}), 201
     
 
 @app.route('/api/sitter', methods=['GET'])
@@ -144,9 +144,9 @@ def add_owner():
 def update_owner(owner_id):
     sitter_id = get_jwt_identity()
     updated_data = request.get_json()
-    data_manager.update_owner(sitter_id=sitter_id, owner_id=owner_id, updated_data=updated_data)
+    updated_owner = data_manager.update_owner(sitter_id=sitter_id, owner_id=owner_id, updated_data=updated_data)
     csrf_token = get_jwt()["csrf"]
-    response = jsonify({"message": "Owner successfully updated", "csrf_token": csrf_token})
+    response = jsonify({"owner": updated_owner, "message": "Owner successfully updated", "csrf_token": csrf_token})
     return response, 200
 
 
@@ -156,7 +156,7 @@ def delete_owner(owner_id):
     sitter_id = get_jwt_identity()
     data_manager.delete_owner(sitter_id=sitter_id, owner_id=owner_id)
     csrf_token = get_jwt()["csrf"]
-    response = jsonify({"message": "Owner and associated dogs successfully deleted", "csrf_token": csrf_token})
+    response = jsonify({"message": "Owner and matching dogs successfully deleted", "csrf_token": csrf_token})
     return response, 200
 
 
@@ -200,9 +200,9 @@ def add_dog(owner_id):
 def update_dog(dog_id):
     sitter_id = get_jwt_identity()
     updated_data = request.get_json()
-    data_manager.update_dog(sitter_id=sitter_id, dog_id=dog_id, updated_data=updated_data)
+    updated_dog = data_manager.update_dog(sitter_id=sitter_id, dog_id=dog_id, updated_data=updated_data)
     csrf_token = get_jwt()["csrf"]
-    response = jsonify({"message": "Dog successfully updated", "csrf_token": csrf_token})
+    response = jsonify({"dog": updated_dog, "message": "Dog successfully updated", "csrf_token": csrf_token})
     return response, 200
 
 
