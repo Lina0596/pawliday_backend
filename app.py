@@ -135,7 +135,7 @@ def add_owner():
         response = jsonify({"owner": created_owner, "csrf_token": csrf_token})
         return response, 201
     owners = data_manager.get_all_owners(sitter_id)
-    response = jsonify({"owners": owners, "csrf_token": csrf_token})
+    response = jsonify({"owners": owners, "message": "Owner successfully added", "csrf_token": csrf_token})
     return response, 200
 
 
@@ -188,7 +188,7 @@ def add_dog(owner_id):
     if request.method == 'POST':
         new_dog_data = request.get_json()
         created_dog = data_manager.add_dog(sitter_id=sitter_id, owner_id=owner_id, new_dog_data=new_dog_data)
-        response = jsonify({"dog": created_dog, "csrf_token": csrf_token})
+        response = jsonify({"dog": created_dog, "message": "Dog successfully added", "csrf_token": csrf_token})
         return response, 201
     owner_dogs = data_manager.get_owner_dogs(owner_id)
     response = jsonify({"owner_dogs": owner_dogs, "csrf_token": csrf_token})
