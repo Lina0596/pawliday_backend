@@ -132,10 +132,10 @@ def add_owner():
     if request.method == 'POST':
         new_owner_data = request.get_json()
         created_owner = data_manager.add_owner(sitter_id=sitter_id, new_owner_data=new_owner_data)
-        response = jsonify({"owner": created_owner, "csrf_token": csrf_token})
+        response = jsonify({"owner": created_owner, "message": "Owner successfully added", "csrf_token": csrf_token})
         return response, 201
     owners = data_manager.get_all_owners(sitter_id)
-    response = jsonify({"owners": owners, "message": "Owner successfully added", "csrf_token": csrf_token})
+    response = jsonify({"owners": owners, "csrf_token": csrf_token})
     return response, 200
 
 
