@@ -70,7 +70,7 @@ def logout():
 def registration():
     new_sitter_data = request.get_json()
     data_manager.add_sitter(new_sitter_data=new_sitter_data)
-    return jsonify({"message": "Registration successfully. Pleas login."}), 201
+    return jsonify({"message": "Registration successfully. Please login."}), 201
     
 
 @app.route('/api/sitter', methods=['GET'])
